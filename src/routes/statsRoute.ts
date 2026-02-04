@@ -1,0 +1,77 @@
+import { Num, OpenAPIRoute, Str } from "chanfana";
+
+import invariant from "tiny-invariant";
+import { z } from "zod";
+import { humanReadableChargePerRequest, humanReadableTtl } from "../lib/config";
+import { BEACON } from "../lib/random";
+import type { AppContext } from "../lib/types";
+
+export class StatsRoute extends OpenAPIRoute {
+	schema = {
+		summary: "Show statistics about the API",
+		responses: {
+			"200": {
+				description: "Returns statistics about the API",
+				content: {
+					"application/json": {
+						schema: z.object({
+							total_eoa_created: Num({
+								description: "Total number of EOAs created",
+							}),
+							total_eoa_retrieved: Num({
+								description: "Total number of requests",
+							}),
+							current_eoa_count: Num({
+								description: "Current number of EOAs in the database",
+							}),
+							time_to_deletion: Num({
+								description: "Storage time before deletion",
+							}),
+							x402_price: Num({
+								description: "Price per request",
+							}),
+							public_randomness_source: Str({
+								description: "Public randomness source",
+							}),
+							user_provided_salt_rules: Str({
+								description: "Rules for user provided salt",
+							}),
+							user_provided_encryption_key_rules: Str({
+								description: "Rules for user provided encryption key",
+							}),
+						}),
+					},
+				},
+			},
+		},
+	};
+
+	async handle(c: AppContext) {
+		invariant(c.env.WALLET_SECRETS, "WALLET_SECRETS is required");
+		invariant(c.env.CHARGE_PER_REQUEST, "CHARGE_PER_REQUEST is required");
+		invariant(c.env.TTL, "TTL is required");
+		invariant(!Number.isNaN(c.env.TTL), "TTL must be a number");
+
+		const total_eoa_created = await c.env.WALLET_SECRETS.get("created_counter");
+		const total_eoa_retrieved =
+			await c.env.WALLET_SECRETS.get("retrieved_counter");
+		const listKeysUpTo1000 = await c.env.WALLET_SECRETS.list();
+		const timeToDeletion = Number(c.env.TTL);
+
+		return {
+			total_eoa_created: Math.max(
+				Number(total_eoa_created || 0),
+				listKeysUpTo1000.keys?.length || 0,
+			),
+			total_eoa_retrieved: total_eoa_retrieved || 0,
+			current_eoa_count: Math.max(listKeysUpTo1000.keys?.length || 0 - 2, 0),
+			time_to_deletion: humanReadableTtl(timeToDeletion),
+			x402_price: humanReadableChargePerRequest(
+				Number(c.env.CHARGE_PER_REQUEST),
+			),
+			public_randomness_source: BEACON,
+			user_provided_salt_rules: "≤255 character Base85 string",
+			user_provided_encryption_key_rules: "40-character Base85 string (256-bit key)",
+		};
+	}
+}

@@ -1,0 +1,10 @@
+# packages
+node_modules/
+bun.lock
+
+# Wrangler
+.wrangler/
+worker-configuration.d.ts
+.dev.vars
+
+TODO.md
