@@ -9,70 +9,88 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="description"
-    content="An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets and never writing valuable secrets to disk in the same context available to the LLM." />
+    content="An API for trustless creation and retrieval of EVM accounts (EOAs). Designed for agentic workflows: create fresh wallets; choose from a spectrum of trust assumptions; be freed from temptation to persist secrets where future agents may access them." />
   <meta name="keywords" content="EVM, EOA, API, agentic, workflow, wallets, secrets" />
   <meta name="author" content="artlu99" />
   <title>Wallets and Faucet API</title>
-  
-    <!-- Critical CSS to prevent FOUC -->
-    <link rel="stylesheet" href="/critical.css">
-    <!-- Google Font: Inknut Antiqua -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inknut+Antiqua&display=swap" rel="stylesheet">
 
-    <!-- OG tags -->
-    <meta property="og:title" content="Wallets and Faucet API" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://github.com/artlu99/wallets-and-faucet" />
-    <meta property="og:description" content="An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets and never writing valuable secrets to disk in the same context available to the LLM." />
-    <meta property="og:site_name" content="Wallets and Faucet API" />
+  <!-- Critical CSS to prevent FOUC -->
+  <link rel="stylesheet" href="/critical.css">
+  <!-- Google Font: Inknut Antiqua -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inknut+Antiqua&display=swap" rel="stylesheet">
 
-    <!-- Twitter Card tags -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Wallets and Faucet API" />
-    <meta name="twitter:description" content="An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets and never writing valuable secrets to disk in the same context available to the LLM." />
-    <meta name="twitter:image" content="https://cdn.artlu.xyz/2P9f4NpaUBk" />
+  <!-- OG tags -->
+  <meta property="og:title" content="Wallets and Faucet API" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://github.com/artlu99/wallets-and-faucet" />
+  <meta property="og:description"
+    content="An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets and never writing valuable secrets to disk in the same context available to the LLM." />
+  <meta property="og:site_name" content="Wallets and Faucet API" />
 
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Wallets and Faucet API" />
+  <meta name="twitter:description"
+    content="An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets and never writing valuable secrets to disk in the same context available to the LLM." />
+  <meta name="twitter:image" content="https://cdn.artlu.xyz/2P9f4NpaUBk" />
 
-    <!-- UnoCSS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/preset-icons.global.js"></script>
-    <script src="/uno.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
 
-    <!-- DaisyUI with themes -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/themes.css" rel="stylesheet" type="text/css" />
-    <!-- Prose last so typography wins for .prose without overriding DaisyUI components -->
-    <link rel="stylesheet" href="/prose.css" />
+  <!-- UnoCSS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime/preset-icons.global.js"></script>
+  <script src="/uno.js"></script>
+
+  <!-- DaisyUI with themes -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5.0.0/dist/themes.css" rel="stylesheet" type="text/css" />
+  <!-- Prose last so typography wins for .prose without overriding DaisyUI components -->
+  <link rel="stylesheet" href="/prose.css" />
 </head>
 
 <body data-theme="silk">
   <div class="prose dark:prose-invert mx-auto p-4">
     <h1>Wallets and Faucet API</h1>
 
-    <p>An API that creates and retrieves EVM keys (EOAs). Designed to be useful for agentic workflows, creating wallets
-      and never writing valuable secrets to disk in the same context available to the LLM.</p>
+    <p>A permissionless API for
+      <a href="https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html" target="_blank"
+        rel="noopener noreferrer">
+        trustless
+      </a>
+      creation and retrieval of EVM accounts (EOAs). Designed for agentic workflows:
+      create fresh wallets; choose from a spectrum of trust assumptions;
+      be freed from temptation to persist secrets where future agents may access them.
+    </p>
 
     <h2>What it does</h2>
     <ul>
-      <li><i>/eoa</i> - create a new EOA (free POST)</li>
-      <li><i>/eoa/:address</i> - fetch an EOA by address (paid GET)</li>
-      <li><a href="/ephemeral-secrets">Generate ephemeral secrets (free GET)</a></li>
-      <li><a href="/stats">API statistics (free GET)</a></li>
+      <li><i>/eoa</i> - <a href="/docs#POST/eoa">create a new EOA (free POST)</a></li>
+      <li><i>/eoa/:address</i> - <a href="/docs#GET/eoa/{address}">fetch an EOA by address (paid GET)</a></li>
+      <li><i>/ephemeral-secrets</i> - <a href="/ephemeral-secrets">generate on demand (free GET)</a></li>
+      <li><i>/stats</i> - <a href="/stats">transparent reporting (free GET)</a></li>
     </ul>
 
     <h2>Documentation</h2>
     <button class="btn btn-wide btn-info" onclick="window.open('/docs', '_blank')">Interactive docs</button>
 
-    <li><a href="/llms.txt">Markdown for LLMs</a></li>
-    <li><a href="/redoc">Redocly</a></li>
-    <li><a href="/swagger">Swagger</a></li>
-    <li><a href="/openapi.json">OpenAPI spec</a></li>
-    <li><a href="https://github.com/artlu99/wallets-and-faucet?tab=readme-ov-file" target="_blank"
-        rel="noopener noreferrer">README.md</a></li>
+
+    <p class="list-none"><a href="/llms.txt">Markdown for LLMs</a></p>
+    <p class="list-none"><a href="/redoc">Redocly</a> | <a href="/swagger">Swagger</a> |
+      <a href="/openapi.json">OpenAPI spec</a>
+    </p>
+    <p class="list-none"><a href="https://github.com/artlu99/wallets-and-faucet?tab=readme-ov-file" target="_blank"
+        rel="noopener noreferrer">README.md</a> 👈 Quick Start</p>
+
+    <h3 id="yay" class="text-2xl font-bold py-4">
+      <a href="#yay" class="no-underline">Yay!</a>
+    </h3>
+
+    <img id="secret-image" class="w-4/5 mx-auto" src="https://cdn.artlu.xyz/2P9V6tSlAQa"
+      alt="pov: me and claude and all the wallets we made safely" class="w-1/2 mx-auto" style="display: none;"
+      onclick="window.open('/#yay', '_blank')">
 
     <h2>Source Code</h2>
     <a href="https://github.com/artlu99/wallets-and-faucet" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -81,6 +99,20 @@
     <a href="https://github.com/artlu99/wallets-and-faucet?tab=MIT-1-ov-file" target="_blank"
       rel="noopener noreferrer">MIT</a>
   </div>
+
+  <script>
+    function updateImageVisibility() {
+      const image = document.getElementById('secret-image');
+      if (window.location.hash === '#yay') {
+        image.style.display = 'block';
+      } else {
+        image.style.display = 'none';
+      }
+    }
+
+    updateImageVisibility();
+    window.addEventListener('hashchange', updateImageVisibility);
+  </script>
 </body>
 
 </html>

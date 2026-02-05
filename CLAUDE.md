@@ -1,4 +1,4 @@
-# CLAUDE.md — Wallets and Faucet
+# Wallets and Faucet API
 
 ## Purpose
 
@@ -8,6 +8,7 @@ Serverless API that creates **EVM EOAs** (based on ECDSA secp256k1 public-privat
 
 - **Runtime**: Cloudflare Workers (no Node/Bun in production). Local dev: `bun run dev` (wrangler dev).
 - **Package manager / runner**: Prefer **Bun** for install and scripts (`bun install`, `bun run dev`, `bunx`). Tests use **Vitest** with `@cloudflare/vitest-pool-workers` (see `vitest.config.ts`); run with `bunx vitest` (or add a `test` script).
+- **Architecture**: Two-worker split. Main worker handles wallet operations; separate x402 payment worker handles payment validation. Communication via Cloudflare service binding (`PAYMENT_WORKER`).
 - **Types**: `wrangler.jsonc` and generated `worker-configuration.d.ts` define **Env** (bindings, vars). Regenerate with `bun run wrangler:types` after changing wrangler config.
 
 ## Project layout
@@ -21,7 +22,7 @@ Serverless API that creates **EVM EOAs** (based on ECDSA secp256k1 public-privat
 
 - **HTTP**: **Hono** only (no Express). App type: `Hono<{ Bindings: Env }>`.
 - **OpenAPI**: **Chanfana** (`fromHono`). Register routes with `openapi.get/post(…, RouteClass)`. Use **Zod** in `schema` for request/response; for optional headers use `z.preprocess((v) => v === null ? undefined : v, Str(…).optional())` so missing headers (null) don’t fail validation. For **Scalar** or **openapi-to-markdown**, pass a **plain JSON OpenAPI document** (e.g. `(openapi as unknown as { schema: OpenAPI.Document }).schema`), not the Chanfana proxy, to avoid DataCloneError in Workers.
-- **Payments**: **x402-hono** `paymentMiddleware`. Route keys use x402 pattern format, e.g. `"GET /eoa/[address]"` (bracket params), not Hono’s `:address`. Config: `RoutesConfig`, `PAYTO_ADDRESS`, `FACILITATOR_URL` from env.
+- **Payments**: Separate **x402 worker** deployed independently. Main worker validates x402 config via `validateX402Config()` and forwards gated requests to `PAYMENT_WORKER` service binding. Payment worker returns 402 (payment required) or 200 (authorized). The main worker does **not** use `x402-hono` middleware directly; it implements the forwarding manually in `src/index.ts`.
 - **Storage**: **KV** binding `WALLET_SECRETS`; keys derived from salt + address (e.g. hash). TTL from env (`TTL`).
 - **Crypto**: AES-256-GCM in `lib/aes-256-cgm.ts`; viem for hex/keys. **Salt and user encryption secret are Base85** (validated with `@alttiri/base85` decode), not Base64. Encryption key: **40-character Base85** string (256-bit key).
 
