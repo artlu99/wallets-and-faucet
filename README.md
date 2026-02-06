@@ -10,6 +10,14 @@ Keys are delivered immediately, and stored encrypted for a short period. Retriev
 
 ---
 
+## Agent Skill
+
+A Claude Skill, Codex Skill, Gemini Skill is available as [/create-staged-eoa-wallet](skills/create-staged-eoa-wallet/SKILL.md).
+
+Strongly recommended to inspect carefully before copying to your own folder.
+
+---
+
 ## Quickstart
 
 ### How It Works
@@ -50,8 +58,8 @@ Provide your own encryption key and/or salt instead of the server defaults.
 **Response (200):**
 ```json
 {
-  "address": "0x1234567890abcdef1234567890abcdef12345678",
-  "pk": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
+  "address": "0x...",
+  "pk": "0x"
 }
 ```
 
@@ -96,8 +104,8 @@ Generate a random salt and encryption key for one-time use. Providing your own s
 **Response (200):**
 ```json
 {
-  "salt": "1234567890abcd",
-  "encryption_secret": "1234567890123456789012345678901234567890",
+  "salt": "abcd1234...",
+  "encryption_secret": "xyz789...",
   "independent": true,
   "mixed": false
 }
@@ -123,7 +131,7 @@ View API statistics and configuration.
 
 ### Encryption
 - Private keys are encrypted with **AES-256-GCM** before storage
-- The server never sees plaintext private keys
+- The server never stores plaintext private keys
 - Highly suggested: provide your own encryption key via `x-encryption-secret` header
 
 ### Salting

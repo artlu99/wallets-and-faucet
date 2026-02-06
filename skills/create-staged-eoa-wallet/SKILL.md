@@ -1,3 +1,9 @@
+---
+version: 1.0.0
+baseUrl: https://wallets-and-faucet.uk
+pinned: https://wallets-and-faucet.eth.limo
+---
+
 # Create Staged EOA Wallet
 
 Generate EVM wallets on-demand. Get an address immediately; retrieve the private key later with nominal x402 payment (currently 0.10 USDC). Auto-expires after 7 days.
@@ -6,7 +12,7 @@ Generate EVM wallets on-demand. Get an address immediately; retrieve the private
 
 > **Note**: The default URL collects x402 payments at `wallets-and-faucet.eth` and serves the frontend permanently via IPFS at `https://wallets-and-faucet.eth.limo`. Self-host to collect fees yourself.
 
-> **Open source & self-hostable**: [github.com/artlu99/wallets-and-faucet](https://github.com/artlu99/wallets-and-faucet) — self-host to collect the x402 fees yourself
+> **Open source & self-hostable**: [github.com/artlu99/wallets-and-faucet](https://github.com/artlu99/wallets-and-faucet)
 
 **Full OpenAPI spec**: Available at `/docs` (Scalar UI), `/redoc` (ReDoc), `/swagger` (Swagger UI), or `/llms.txt` (Markdown)
 
