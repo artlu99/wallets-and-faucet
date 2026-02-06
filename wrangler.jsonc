@@ -9,7 +9,7 @@
 		"NAME": "Wallets and Faucet",
 		"CHARGE_PER_REQUEST": "0.1",
 		"SHORT_CIRCUIT_PAYMENT": "false",
-		"TTL": 900 // 15 minutes in seconds
+		"TTL": 604800 // 7 days
 	},
 	"assets": {
 		"directory": "./public/",
