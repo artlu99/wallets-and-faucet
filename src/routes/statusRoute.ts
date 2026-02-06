@@ -26,11 +26,11 @@ export class StatusRoute extends OpenAPIRoute {
 							current_eoa_count: Num({
 								description: "Current number of EOAs in the database",
 							}),
-							time_to_deletion: Num({
-								description: "Storage time before deletion",
+							time_to_deletion: Str({
+								description: "Storage time before deletion (human-readable)",
 							}),
-							x402_price: Num({
-								description: "Price per request",
+							x402_price: Str({
+								description: "Price per request (human-readable)",
 							}),
 							public_randomness_source: Str({
 								description: "Public randomness source",

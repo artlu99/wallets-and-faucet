@@ -16,6 +16,7 @@
 		"@scalar/openapi-to-markdown": "^0.3.38",
 		"@x402/core": "^2.2.0",
 		"@x402/evm": "^2.2.0",
+		"@x402/extensions": "^2.3.0",
 		"@x402/fetch": "^2.2.0",
 		"@x402/hono": "^2.2.0",
 		"chanfana": "^2.8.3",

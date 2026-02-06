@@ -1,6 +1,10 @@
 import { createFacilitatorConfig } from "@coinbase/x402";
 import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
+import {
+	bazaarResourceServerExtension,
+	declareDiscoveryExtension,
+} from "@x402/extensions/bazaar";
 import { paymentMiddleware } from "@x402/hono";
 import { Hono } from "hono";
 import { getAddress } from "viem";
@@ -27,6 +31,41 @@ app.use("/*", async (c, next) => {
 				},
 			],
 			description: "Get previously created private key",
+			extensions: {
+				// Declare discovery metadata for Bazaar
+				...declareDiscoveryExtension({
+					output: {
+						example: {
+							address: "0x1234567890123456789012345678901234567890",
+							pk: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+							mnemonic:
+								"abandon ability able about above absent absorb abstract absurd abuse access accident", // optional
+						},
+						schema: {
+							type: "object",
+							properties: {
+								address: {
+									type: "string",
+									description:
+										"EVM wallet address (0x-prefixed, EIP-55 mixed case)",
+									pattern: "^0x[a-fA-F0-9]{40}$",
+								},
+								pk: {
+									type: "string",
+									description: "Private key (0x-prefixed hex, 64 chars)",
+									pattern: "^0x[a-fA-F0-9]{64}$",
+								},
+								mnemonic: {
+									type: "string",
+									description:
+										"BIP39 mnemonic phrase (24 words, space-separated, optional)",
+								},
+							},
+							required: ["address", "pk"],
+						},
+					},
+				}),
+			},
 		},
 	};
 	const facilitator = new HTTPFacilitatorClient(
@@ -36,6 +75,9 @@ app.use("/*", async (c, next) => {
 		"eip155:8453",
 		new ExactEvmScheme(),
 	);
+
+	// Register bazaar extension for discovery
+	server.registerExtension(bazaarResourceServerExtension);
 
 	return paymentMiddleware(routes, server)(c, next);
 });
