@@ -1,35 +1,45 @@
+import { createFacilitatorConfig } from "@coinbase/x402";
+import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { paymentMiddleware } from "@x402/hono";
 import { Hono } from "hono";
-import { paymentMiddleware } from "x402-hono";
+import { getAddress } from "viem";
+import { validatePaymentWorkerConfig } from "./lib/config";
 
-interface PaymentEnv {
-  FACILITATOR_URL: string;
-  PAYTO_ADDRESS: string;
-}
+const app = new Hono<{ Bindings: Env }>();
 
-const app = new Hono<{ Bindings: PaymentEnv }>();
-
-// x402 payment middleware for all routes
 app.use("/*", async (c, next) => {
-  const middleware = paymentMiddleware(
-    c.env.PAYTO_ADDRESS as `0x${string}`,
-    {
-      "GET /eoa/*": {
-        price: "$0.10",
-        network: "base",
-        config: {
-          description: "Pay to retrieve private key",
-        },
-      },
-    },
-    { url: c.env.FACILITATOR_URL },
-  );
+	validatePaymentWorkerConfig(c.env);
 
-  return middleware(c, next);
+	const shortCircuitPayment = c.env.SHORT_CIRCUIT_PAYMENT !== "false";
+	if (shortCircuitPayment) {
+		return next();
+	}
+
+	const routes = {
+		"GET /eoa/*": {
+			accepts: [
+				{
+					scheme: "exact",
+					network: "eip155:8453" as const,
+					payTo: getAddress(c.env.PAYTO_ADDRESS),
+					price: "$0.10",
+				},
+			],
+			description: "Get previously created private key",
+		},
+	};
+	const facilitator = new HTTPFacilitatorClient(
+		createFacilitatorConfig(c.env.CDP_API_KEY_ID, c.env.CDP_API_KEY_SECRET),
+	);
+	const server = new x402ResourceServer(facilitator).register(
+		"eip155:8453",
+		new ExactEvmScheme(),
+	);
+
+	return paymentMiddleware(routes, server)(c, next);
 });
 
-// If payment succeeds, return 200 OK (main worker will handle the actual response)
-app.all("/*", (c) => {
-  return c.json({ success: true }, 200);
-});
+app.all("/*", (c) => c.json({ success: true }, 200));
 
 export default app;

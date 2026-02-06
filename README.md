@@ -1,12 +1,12 @@
 # Wallets and Faucet
 
-![Wallets and Faucet](https://wallets-and-faucet.artlu.xyz/og-image.png)
+![Wallets and Faucet](https://cdn.artlu.xyz/2P9f4NpaUBk)
 
 A permissionless API for [trustless](https://trustlessness.eth.limo/general/2025/11/11/the-trustless-manifesto.html) creation and retrieval of EVM accounts (EOAs). Designed for agentic workflows: create fresh wallets; choose from a spectrum of trust assumptions; be freed from temptation to persist secrets where future agents may access them.
 
 Keys are delivered immediately, and stored encrypted for a short period. Retrieving a private key by its public address is gated by an [x402](https://x402.org) payment to cover storage costs, and optionally by user-provided secrets that the server never stores. All code is open source. Storage is provided at arm's length and secure removal is guaranteed by Cloudflare.
 
-[*Easter Egg*](https://wallets-and-faucet.artlu.xyz/#yay)
+[*Easter Egg*](https://wallets-and-faucet.eth.limo/#yay)
 
 ---
 
@@ -25,9 +25,6 @@ All wallets are stored with end-to-end encryption. For additional privacy (optio
 
 ## Endpoints
 
-### Base URL
-Replace `your-worker.workers.dev` with your deployed worker URL.
-
 ### 1. Create a Wallet (Free)
 ```bash
 POST /eoa
@@ -38,17 +35,17 @@ Creates a new EVM wallet with a fresh private key.
 **Request Body:**
 ```json
 {
-  "salt": "",          // Optional: Base85 string, ≤255 chars (default: server salt)
-  "mix": false,        // Optional: mix private key with public randomness beacon
-  "mnemonic": false    // Optional: include BIP39 mnemonic phrase in response
+  "mix_entropy_with_public_source": false,        // Optional: mix private key with public randomness beacon
+  "show_mnemonic": false    // Optional: include BIP39 mnemonic phrase in response
 }
 ```
 
-**Optional Header:**
+**Optional Headers:**
 ```
 x-encryption-secret: <40-char Base85 string>
+x-salt: <Base85 string, ≤255 chars>
 ```
-Provide your own encryption key instead of the server default.
+Provide your own encryption key and/or salt instead of the server defaults.
 
 **Response (200):**
 ```json
@@ -69,7 +66,7 @@ If `"mnemonic": true`, you also get:
 
 ### 2. Retrieve a Wallet (Paid)
 ```bash
-GET /eoa/:address?salt=<replace_with_your_salt>
+GET /eoa/:address
 ```
 
 Retrieves a previously created wallet's private key. Requires **x402 payment** (402 Payment Required).
@@ -77,13 +74,12 @@ Retrieves a previously created wallet's private key. Requires **x402 payment** (
 **Path Parameters:**
 - `address` — The wallet's public address
 
-**Query Parameters:**
-- `salt` — The same salt used when creating the wallet (or empty string if using default)
-
-**Optional Header:**
+**Optional Headers:**
 ```
 x-encryption-secret: <same 40-char Base85 string used during creation>
+x-salt: <same salt used when creating the wallet>
 ```
+Provide the same encryption secret and salt used during wallet creation (or omit both if using server defaults).
 
 **Payment:**
 This endpoint is protected by **x402**. You'll receive a 402 response with payment instructions. Complete the payment and retry to retrieve the private key.
@@ -97,16 +93,26 @@ GET /ephemeral-secrets
 
 Generate a random salt and encryption key for one-time use. Providing your own secrets adds an extra layer of protection beyond the payment requirement.
 
+**Response (200):**
+```json
+{
+  "salt": "1234567890abcd",
+  "encryption_secret": "1234567890123456789012345678901234567890",
+  "independent": true,
+  "mixed": false
+}
+```
+
 **Usage:**
 1. Call this endpoint to get fresh secrets
-2. Use them when creating a wallet (provide `salt` in body, `x-encryption-secret` in header)
+2. Use them when creating a wallet (provide `x-salt` and `x-encryption-secret` headers)
 3. Store them securely — you'll need them again to retrieve the wallet!
 
 ---
 
-### 4. API Stats (Free)
+### 4. API Status (Free)
 ```bash
-GET /stats
+GET /status
 ```
 
 View API statistics and configuration.
@@ -140,32 +146,33 @@ Use ephemeral secrets when you need to bridge between a development environment 
 ### Basic, Semi-Trusted Usage
 ```bash
 # 1. Create a wallet
-curl -X POST https://your-worker.workers.dev/eoa \
+curl -X POST https://wallets-and-faucet.uk/eoa \
   -H "Content-Type: application/json" \
-  -d '{"salt": "replace_with_your_salt", "mnemonic": false}'
+  -d '{"show_mnemonic": false}'
 
 # Response: Save the address and pk!
 # {"address":"0x...","pk":"0x..."}
 
 # 2. Later, retrieve it (requires x402 payment)
-curl https://your-worker.workers.dev/eoa/0x...?salt=replace_with_your_salt
+curl https://wallets-and-faucet.uk/eoa/0x...
 ```
 
 ### Privacy-Maximizing, Trustless Usage
 ```bash
 # 1. Generate ephemeral secrets
-curl https://your-worker.workers.dev/ephemeral-secrets
-# {"salt":"replace_with_your_salt","encryption_secret":"xyz789..."}
+curl https://wallets-and-faucet.uk/ephemeral-secrets
+# {"salt":"abcd1234...","encryption_secret":"xyz789...","independent":true,"mixed":false}
 
 # 2. Create wallet with those secrets
-curl -X POST https://your-worker.workers.dev/eoa \
+curl -X POST https://wallets-and-faucet.uk/eoa \
   -H "Content-Type: application/json" \
-  -H "x-encryption-secret: xyz789..." \
-  -d '{"salt": "replace_with_your_salt", "mnemonic": true}'
-
+  -H "x-salt: abcd1234..." \
+  -H "x-encryption-secret: xyz789..."
+  
 # 3. Retrieve with the same secrets (after x402 payment)
-curl https://your-worker.workers.dev/eoa/0x...?salt=replace_with_your_salt \
-  -H "x-encryption-secret: xyz789"
+curl https://wallets-and-faucet.uk/eoa/0x... \
+  -H "x-salt: abcd1234..." \
+  -H "x-encryption-secret: xyz789..."
 ```
 
 ---
@@ -174,7 +181,7 @@ curl https://your-worker.workers.dev/eoa/0x...?salt=replace_with_your_salt \
 
 - Creating wallets **is always free**
 - Retrieving private keys **requires x402 payment**
-- Private keys are evicted from storage after the TTL period (inspect `/stats` for current server duration policy)
+- Private keys are evicted from storage after the TTL period (inspect `/status` for current server duration policy)
 - **Interactive use:** Save the private key immediately when creating a wallet
 - **Agentic use:** Let agents create wallets without persisting secrets in insecure environments. Retrieve later via paid endpoint if needed. Or, create another wallet using the same free process to deploy to prod, never allowing those secrets to enter insecure memory
 

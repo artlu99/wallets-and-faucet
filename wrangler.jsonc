@@ -2,11 +2,9 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "wallets-and-faucet",
 	"main": "src/index.ts",
-	"compatibility_date": "2026-01-31",
+	"compatibility_date": "2026-02-05",
 	"compatibility_flags": ["nodejs_compat"],
-	"observability": {
-		"enabled": true
-	},
+	"observability": { "enabled": true },
 	"vars": {
 		"NAME": "Wallets and Faucet",
 		"CHARGE_PER_REQUEST": "0.1",

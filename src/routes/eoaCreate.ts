@@ -26,10 +26,24 @@ export class EOACreate extends OpenAPIRoute {
 						description:
 							"User provided optional override for symmetric encryption key (256-bit Base85 string)",
 						required: false,
-						example: "12345678901234567890123456789012345678901",
+						example: "xyz789...",
 					})
 						.refine((value) => EncryptionKeySchema.safeParse(value).success, {
-							message: "Encryption secret must be a valid 256-bit Base85 string",
+							message:
+								"Encryption secret must be a valid 256-bit Base85 string",
+						})
+						.optional(),
+				),
+				"x-salt": z.preprocess(
+					(value) => (value === null ? undefined : value),
+					Str({
+						description:
+							"User provided optional override salt (≤255 character Base85 string)",
+						required: false,
+						example: "abcd1234...",
+					})
+						.refine((value) => SaltSchema.safeParse(value).success, {
+							message: "Salt must be a valid Base85 string",
 						})
 						.optional(),
 				),
@@ -38,21 +52,13 @@ export class EOACreate extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							mix: Bool({
+							mix_entropy_with_public_source: Bool({
 								description:
-									"mix generated private key with public randomness beacon",
+									"mix privately generated key with randomness beacon",
 							}).default(false),
-							mnemonic: Bool({ description: "show mnemonic or nah" }).default(
-								false,
-							),
-							salt: Str({ description: "≤255 character Base85 salt" })
-								.default("")
-								.refine((value) => value.length <= 255, {
-									message: "Salt must be less than 255 characters",
-								})
-								.refine((value) => SaltSchema.safeParse(value).success, {
-									message: "Salt must be a valid Base85 string",
-								}),
+							show_mnemonic: Bool({
+								description: "show mnemonic phrase in the response",
+							}).default(false),
 						}),
 					},
 				},
@@ -71,22 +77,23 @@ export class EOACreate extends OpenAPIRoute {
 	};
 
 	async handle(c: AppContext) {
-		invariant(c.env.WALLET_SECRETS, "WALLET_SECRETS is required");
-		invariant(c.env.SALT, "SALT is required");
-		invariant(
-			SaltSchema.safeParse(c.env.SALT).success,
-			"SALT must be a valid Base64 string",
-		);
-		invariant(c.env.TTL, "TTL is required");
-		invariant(!Number.isNaN(c.env.TTL), "TTL must be a number");
-
 		const data = await this.getValidatedData<typeof this.schema>();
-		const { mix: useMix, mnemonic: showMnemonic, salt: userSalt } = data.body;
-		const { "x-encryption-secret": userEncryptionSecret } = data.headers;
+		const { "x-encryption-secret": userEncryptionSecret, "x-salt": userSalt } =
+			data.headers;
+		const {
+			mix_entropy_with_public_source: useMixing,
+			show_mnemonic: showMnemonic,
+		} = data.body;
 		if (userEncryptionSecret) {
 			invariant(
 				EncryptionKeySchema.safeParse(userEncryptionSecret).success,
-				"Encryption secret must be a valid 256-bit hex string",
+				"Encryption secret must be a valid 256-bit Base85 string",
+			);
+		}
+		if (userSalt) {
+			invariant(
+				SaltSchema.safeParse(userSalt).success,
+				"Salt must be a valid Base85 string",
 			);
 		}
 
@@ -94,7 +101,7 @@ export class EOACreate extends OpenAPIRoute {
 		const localPrivateKey = getRandomPrivateKey();
 
 		// optionally mix private key with public randomness beacon
-		const pk = useMix
+		const pk = useMixing
 			? bytesToHex(await mixWithBeacon(hexToBytes(localPrivateKey)))
 			: localPrivateKey;
 
@@ -102,13 +109,17 @@ export class EOACreate extends OpenAPIRoute {
 
 		// salt + hash public key for keyed storage in KV
 		const salt = userSalt || c.env.SALT;
+		invariant(
+			SaltSchema.safeParse(salt).success,
+			"SALT must be a valid Base85 string",
+		);
 		const hash = await sha256(`${salt}${address}`);
 
 		// encrypt private key with AES-256-GCM
 		const encryptionKey = userEncryptionSecret || c.env.ENCRYPTION_KEY_256_BIT;
 		invariant(
 			EncryptionKeySchema.safeParse(encryptionKey).success,
-			"ENCRYPTION_KEY_256_BIT must be a valid 256-bit hex string",
+			"ENCRYPTION_KEY_256_BIT must be a valid 256-bit Base85 string",
 		);
 
 		const key = await getCryptoKey(encryptionKey);

@@ -9,15 +9,16 @@
 
 1. **Install**
 ```bash
-git clone <repo-url>
+git clone https://github.com/artlu99/wallets-and-faucet.git
 cd wallets-and-faucet
 bun install
 bun wrangler:types
    ```
+Set up Workers KV with Cloudflare.
 
 2. **Develop locally**
 ```bash
-bun run dev
+bun dev
 ```
 
 *N.B.*, `dev` and `prod` KV stores are kept separate by default
@@ -29,7 +30,7 @@ bun run dev
 
 Log in to Cloudflare
 ```bash
-bunx wrangler login
+bun wrangler login
 ```
 
 Deploy
@@ -45,8 +46,9 @@ bun run deploy
 |----------|-------------|
 | `ENCRYPTION_KEY_256_BIT` | 40-character Base85 string (256-bit key) used as fallback to encrypt keys in KV |
 | `SALT` | salt (Base85, ≤255 chars) used as fallback to salt the KV keys |
+| `CDP_API_KEY_ID` | Coinbase CDP API key to use Coinbase x402 facilitator |
+| `CDP_API_KEY_SECRET` | Coinbase CDP API secret |
 | `PAYTO_ADDRESS` | EVM address that receives x402 payments |
-| `FACILITATOR_URL` | x402 facilitator base URL (e.g. `https://x402.org/facilitator`). |
 
 **Config** (in `wrangler.jsonc` or overridden in dashboard):
 
@@ -55,28 +57,19 @@ bun run deploy
 | `CHARGE_PER_REQUEST` | Price per paid request (e.g. `0.1` for $0.10). |
 | `TTL` | How long keys stay in KV, in seconds (e.g. `900` = 15 minutes, `604800` = 7 days). |
 
-## API overview
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/eoa` | Create a new EOA. Body: `mix`, `mnemonic`, `salt` (optional). Rcommended header (optional): `x-encryption-secret`. |
-| `GET` | `/eoa/:address` | Fetch an EOA by address. **Requires x402 payment.** Query: `salt` (optional). Header (optional): `x-encryption-secret`. |
-| `GET` | `/ephemeral-secrets` | Generate ephemeral salt and encryption key (for testing or one-off use). |
-| `GET` | `/stats` | API statistics (counts, TTL, price, salt/key rules). |
-
 **Docs and specs**
 
 - **Interactive docs**: `/docs` (Scalar)
-- **OpenAPI JSON**: `/doc` (Chanfana default)
+- **OpenAPI JSON**: `/openapi.json`
 - **Markdown** (for LLMs): `/llms.txt`
 
 For full request/response schemas, use the OpenAPI spec or the interactive docs at `/docs`.
 
 ## Development
 
-- **Tests**: `bun vitest` (uses Cloudflare Vitest Workers pool).
+- **Tests**: `bun test` (uses Cloudflare Vitest Workers pool).
 - **Types**: Regenerate Worker env types with `bun wrangler:types` after changing `wrangler.jsonc`.
 
 ## License
 
-MIT.
+MIT

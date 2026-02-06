@@ -8,7 +8,6 @@ describe("salt schema", () => {
 		expect(
 			SaltSchema.safeParse("+V7Cwq/N8vL48D4Jm2/hOZgV8Y04o8K4pQw=").success,
 		).toBe(true);
-
 	});
 
 	it("should validate (empty)", () => {
@@ -23,14 +22,12 @@ describe("salt schema", () => {
 describe("encryption key schema", () => {
 	it("should validate", () => {
 		expect(
-			EncryptionKeySchema.safeParse(
-				"1234567890123456789012345678901234567890",
-			).success,
+			EncryptionKeySchema.safeParse("1234567890123456789012345678901234567890")
+				.success,
 		).toBe(true);
 		expect(
-			EncryptionKeySchema.safeParse(
-				"937c9e917f0811730c123c1a78aab4e83b28c9b4",
-			).success,
+			EncryptionKeySchema.safeParse("937c9e917f0811730c123c1a78aab4e83b28c9b4")
+				.success,
 		).toBe(true);
 	});
 

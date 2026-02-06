@@ -3,11 +3,11 @@ import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
 import type { OpenAPI } from "@scalar/openapi-types";
 import { fromHono } from "chanfana";
 import { Hono } from "hono";
-import { validateX402Config } from "./lib/config";
+import { validateConfig } from "./lib/config";
 import { EOACreate } from "./routes/eoaCreate";
 import { EOAFetch } from "./routes/eoaFetch";
 import { EphemeralSecretsRoute } from "./routes/ephemeralRoute";
-import { StatsRoute } from "./routes/statsRoute";
+import { StatusRoute } from "./routes/statusRoute";
 
 const TITLE = "Wallets and Faucet API";
 
@@ -35,35 +35,70 @@ const openapi = fromHono(app, {
 
 // Payment middleware using service binding (x402 is in separate worker)
 app.use("/eoa/:address", async (c, next) => {
-	validateX402Config(c.env);
+	validateConfig(c.env);
 
-	// Forward the request to the payment worker
+	// Forward the request to the payment worker (explicit header copy so X-PAYMENT is not lost)
 	const paymentWorker = c.env.PAYMENT_WORKER;
 	const url = new URL(c.req.url);
-	const paymentUrl = new URL(url.pathname + url.search, "http://payment-worker");
+	const paymentUrl = new URL(
+		url.pathname + url.search,
+		"http://payment-worker",
+	);
+	const fwdHeaders = new Headers();
+	const xPaymentKey = "x-payment";
+	// X-PAYMENT must be single-line base64; strip whitespace (e.g. from header folding) so payment worker's atob+JSON.parse succeeds
+	c.req.raw.headers.forEach((value, key) => {
+		const normalized =
+			key.toLowerCase() === xPaymentKey ? value.replace(/\s/g, "") : value;
+		fwdHeaders.set(key, normalized);
+	});
 
 	const paymentResponse = await paymentWorker.fetch(
 		new Request(paymentUrl, {
 			method: c.req.method,
-			headers: c.req.raw.headers,
+			headers: fwdHeaders,
 			body: c.req.raw.body,
 		}),
 	);
 
-	// If payment check passes, continue to the route handler
+	// forward x402 payment headers to client
 	if (paymentResponse.ok) {
-		return next();
+		const paymentHeaders = new Headers();
+		paymentResponse.headers.forEach((value, key) => {
+			if (
+				key.toLowerCase().startsWith("x-") ||
+				key.toLowerCase().startsWith("payment-")
+			) {
+				paymentHeaders.set(key, value);
+			}
+		});
+
+		await next();
+
+		// After route handler completes, attach payment headers to the response
+		paymentHeaders.forEach((value, key) => {
+			c.header(key, value);
+		});
+
+		return;
 	}
 
-	// Otherwise return the payment response (likely 402 Payment Required)
-	return paymentResponse;
+	// Return 402 (or other error) with payment headers explicitly preserved so the client
+	// can read PAYMENT-REQUIRED / PAYMENT-RESPONSE (v2 puts requirements in headers).
+	const paymentHeaders = new Headers(paymentResponse.headers);
+	const body = await paymentResponse.text();
+	return new Response(body || undefined, {
+		status: paymentResponse.status,
+		statusText: paymentResponse.statusText,
+		headers: paymentHeaders,
+	});
 });
 
 openapi
 	.get("/eoa/:address", EOAFetch)
 	.post("/eoa", EOACreate)
 	.get("/ephemeral-secrets", EphemeralSecretsRoute)
-	.get("/stats", StatsRoute);
+	.get("/status", StatusRoute);
 
 const schema = (openapi as unknown as { schema: OpenAPI.Document }).schema;
 app.get("/docs", Scalar({ content: schema, pageTitle: TITLE }));

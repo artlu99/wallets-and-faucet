@@ -7,4 +7,9 @@ bun.lock
 worker-configuration.d.ts
 .dev.vars
 
+# dotenvx
+.env.keys
+
 TODO.md
+.agents/
+.claude/skills/

@@ -1,10 +1,12 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "wallets-payment-worker",
-  "main": "src/payment-worker.ts",
-  "compatibility_date": "2026-01-31",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": {
-    "enabled": true
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "wallets-payment-worker",
+	"main": "src/payment-worker.ts",
+	"compatibility_date": "2026-02-05",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": { "enabled": true },
+	"vars": {
+		"SHORT_CIRCUIT_PAYMENT": "false",
+		"CHARGE_PER_REQUEST": "0.1"
+	}
 }

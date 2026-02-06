@@ -6,16 +6,13 @@ import { z } from "zod";
 export type AppContext = Context<{ Bindings: Env }>;
 
 export const EOA = z.object({
-	address: Str({ example: "0x1234567890abcdef" }),
-	pk: Str({ example: "0x1234567890abcdef" }),
-	mnemonic: Str({ example: "word word ... word" }).optional(),
+	address: Str({ example: "0x..." }),
+	pk: Str({ example: "0x..." }),
+	mnemonic: Str({ example: "word1 word2 word3 ... word24" }).optional(),
 });
 
 export const SaltSchema = z
 	.string()
-	.refine((value) => value.length <= 255, {
-		message: "Salt must be less than 255 characters",
-	})
 	.refine(
 		(value) => {
 			if (value === "") return true;
@@ -28,13 +25,19 @@ export const SaltSchema = z
 			}
 		},
 		{ message: "Must be a valid Base85 string" },
+	)
+	.refine(
+		(value) => {
+			if (value === "") return true;
+			return value.length <= 255;
+		},
+		{
+			message: "Salt must be less than 255 characters",
+		},
 	);
 
 export const EncryptionKeySchema = z
 	.string()
-	.refine((value) => value.length === 40, {
-		message: "Encryption key must be 256 bits (40 characters in Base85)",
-	})
 	.refine(
 		(value) => {
 			try {
@@ -46,6 +49,15 @@ export const EncryptionKeySchema = z
 			}
 		},
 		{ message: "Must be a valid Base85 string" },
+	)
+	.refine(
+		(value) => {
+			const decoded = b85decode(value);
+			return decoded.length === 256 / 8;
+		},
+		{
+			message: "Encryption key must be 256 bits (40 characters in Base85)",
+		},
 	);
 
 export type EncryptionKey = z.infer<typeof EncryptionKeySchema>;

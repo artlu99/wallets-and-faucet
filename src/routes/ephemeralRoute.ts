@@ -16,18 +16,20 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 						schema: z.object({
 							salt: Str({
 								description: "Ephemeral salt",
-								example: "1234567890abcd",
+								example: "abcd1234...",
 							}),
 							encryption_secret: Str({
 								description: "Ephemeral encryption key",
-								example: "1234567890123456789012345678901234567890",
+								example: "xyz789...",
 							}),
 							independent: Bool({
-								description: "Whether the salt and encryption key are independent",
+								description:
+									"Whether the salt and encryption key are independent",
 								example: true,
 							}),
 							mixed: Bool({
-								description: "Whether the entropy was mixed with a public source",
+								description:
+									"Whether the entropy was mixed with a public source",
 								example: false,
 							}),
 						}),
@@ -51,7 +53,7 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 			salt: salt,
 			encryption_secret: encryptionKey,
 			independent: true,
-			mixed: false
+			mixed: false,
 		};
 	}
 }

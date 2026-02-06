@@ -1,3 +1,4 @@
+import { decode as b85decode } from "@alttiri/base85";
 import invariant from "tiny-invariant";
 import { bytesToHex, type Hex, hexToBytes } from "viem";
 import {
@@ -14,7 +15,7 @@ export const getCryptoKey = async (key: EncryptionKey): Promise<CryptoKey> => {
 
 	return await crypto.subtle.importKey(
 		"raw",
-		hexToBytes(`0x${key.replace("0x", "")}`),
+		b85decode(key),
 		{ name: "AES-GCM" },
 		false,
 		["encrypt", "decrypt"],
