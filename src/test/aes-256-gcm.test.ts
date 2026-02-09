@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { decrypt, encrypt } from "../lib/aes-256-cgm";
+import { decrypt, encrypt } from "../lib/aes-256-gcm";
 
-describe("aes-256-cgm", async () => {
+describe("aes-256-gcm", async () => {
 	const key = await crypto.subtle.importKey(
 		"raw",
 		new TextEncoder().encode("test-key".repeat(4)),

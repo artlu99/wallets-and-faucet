@@ -5,7 +5,7 @@ import { sha256 } from "hono/utils/crypto";
 import invariant from "tiny-invariant";
 import { bytesToHex, hexToBytes } from "viem";
 import { z } from "zod";
-import { encrypt, getCryptoKey } from "../lib/aes-256-cgm";
+import { encrypt, getCryptoKey } from "../lib/aes-256-gcm";
 import { getAccount, getRandomPrivateKey } from "../lib/eoa";
 import { mix as mixWithBeacon } from "../lib/random";
 import {

@@ -15,7 +15,7 @@ Serverless API that creates **EVM EOAs** (ECDSA secp256k1 public-private keypair
 
 - **`src/index.ts`**: Hono app, Chanfana `fromHono(app, …)`, x402 `paymentMiddleware` for gated routes, Scalar docs, `/llms.txt` (OpenAPI-as-markdown). Do **not** chain Hono’s `.use()` off the Chanfana `openapi` proxy—it breaks typing and route registration.
 - **`src/routes/`**: One file per route/feature; each exports a class extending **Chanfana `OpenAPIRoute`** with `schema` and `handle(c: AppContext)`.
-- **`src/lib/`**: Shared logic—`types.ts` (Zod: `EOA`, `SaltSchema`, `EncryptionKeySchema`, `EncryptedPayloadSchema`), `config.ts` (x402/env validation, human-readable TTL/price), `aes-256-cgm.ts`, `eoa.ts`, `random.ts`.
+- **`src/lib/`**: Shared logic—`types.ts` (Zod: `EOA`, `SaltSchema`, `EncryptionKeySchema`, `EncryptedPayloadSchema`), `config.ts` (x402/env validation, human-readable TTL/price), `aes-256-gcm.ts`, `eoa.ts`, `random.ts`.
 - **`src/test/`**: Vitest tests; `env.d.ts` augments Cloudflare test env with `Env`. Use the Workers pool and wrangler config as in `vitest.config.ts`. Script with onchain effects (spends real money) `test-onchain-payment-flow.ts`.
 
 ## Stack and key choices
@@ -24,7 +24,7 @@ Serverless API that creates **EVM EOAs** (ECDSA secp256k1 public-private keypair
 - **OpenAPI**: **Chanfana** (`fromHono`). Register routes with `openapi.get/post(…, RouteClass)`. Use **Zod** in `schema` for request/response; for optional headers use `z.preprocess((v) => v === null ? undefined : v, Str(…).optional())` so missing headers (null) don’t fail validation. For **Scalar** or **openapi-to-markdown**, pass a **plain JSON OpenAPI document** (e.g. `(openapi as unknown as { schema: OpenAPI.Document }).schema`), not the Chanfana proxy, to avoid DataCloneError in Workers.
 - **Payments**: Separate **x402 worker** deployed concurrently. Main worker validates x402 config via `validateX402Config()` and forwards gated requests to `PAYMENT_WORKER` service binding. Payment worker returns 402 (payment required) or 200 (authorized). The main worker does **not** use x402 middleware directly; it implements the forwarding manually in `src/index.ts`.
 - **Storage**: **KV** binding `WALLET_SECRETS`; keys derived from salt + address (e.g. hash). TTL from env (`TTL`).
-- **Crypto**: AES-256-GCM in `lib/aes-256-cgm.ts`; viem for hex/keys. **Salt and user encryption secret are Base85** (validated with `@alttiri/base85` decode), not Base64. Encryption key: **40-character Base85** string (256-bit key).
+- **Crypto**: AES-256-GCM in `lib/aes-256-gcm.ts`; viem for hex/keys. **Salt and user encryption secret are Base85** (validated with `@alttiri/base85` decode), not Base64. Encryption key: **40-character Base85** string (256-bit key).
 
 ## Conventions
 

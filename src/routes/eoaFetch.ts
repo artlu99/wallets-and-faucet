@@ -2,7 +2,7 @@ import { OpenAPIRoute, Str } from "chanfana";
 import { sha256 } from "hono/utils/crypto";
 import invariant from "tiny-invariant";
 import { z } from "zod";
-import { decrypt, getCryptoKey } from "../lib/aes-256-cgm";
+import { decrypt, getCryptoKey } from "../lib/aes-256-gcm";
 import { getAccount } from "../lib/eoa";
 import {
 	type AppContext,
