@@ -4,7 +4,6 @@ import type { OpenAPI } from "@scalar/openapi-types";
 import { fromHono } from "chanfana";
 import { Hono } from "hono";
 import { validateConfig } from "./lib/config";
-import { BuildInfoRoute } from "./routes/buildInfoRoute";
 import { EOACreate } from "./routes/eoaCreate";
 import { EOAFetch } from "./routes/eoaFetch";
 import { EphemeralSecretsRoute } from "./routes/ephemeralRoute";
@@ -99,8 +98,7 @@ openapi
 	.get("/eoa/:address", EOAFetch)
 	.post("/eoa", EOACreate)
 	.get("/ephemeral-secrets", EphemeralSecretsRoute)
-	.get("/status", StatusRoute)
-	.get("/build-info", BuildInfoRoute);
+	.get("/status", StatusRoute);
 
 const schema = (openapi as unknown as { schema: OpenAPI.Document }).schema;
 app.get("/docs", Scalar({ content: schema, pageTitle: TITLE }));

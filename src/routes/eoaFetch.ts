@@ -114,7 +114,7 @@ export class EOAFetch extends OpenAPIRoute {
 
 		try {
 			const key = await getCryptoKey(encryptionKey);
-			const { iv, ciphertext } = valid.data;
+			const { iv, ciphertext, expiresAfter } = valid.data;
 			const plaintext = await decrypt(key, { iv, ciphertext });
 			const pk = new TextDecoder().decode(plaintext);
 
@@ -128,6 +128,7 @@ export class EOAFetch extends OpenAPIRoute {
 			return EOA.parse({
 				address: getAccount(`0x${pk.replace("0x", "")}`).address,
 				pk,
+				expiresAfter,
 			});
 		} catch (_error) {
 			const total_eoa_failed_to_decrypt = await c.env.WALLET_SECRETS.get(

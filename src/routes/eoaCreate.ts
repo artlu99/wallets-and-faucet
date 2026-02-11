@@ -122,11 +122,13 @@ export class EOACreate extends OpenAPIRoute {
 			"ENCRYPTION_KEY_256_BIT must be a valid 256-bit Base85 string",
 		);
 
+		const expirationTtl = Number(c.env.TTL);
+		const expiresAfter = Date.now() / 1000 + expirationTtl;
 		const key = await getCryptoKey(encryptionKey);
 		const payload = await encrypt(key, new TextEncoder().encode(pk));
 
-		await c.env.WALLET_SECRETS.put(hash, JSON.stringify(payload), {
-			expirationTtl: Number(c.env.TTL),
+		await c.env.WALLET_SECRETS.put(hash, JSON.stringify({ ...payload, expiresAfter }), {
+			expirationTtl,
 		});
 
 		const total_eoa_created = await c.env.WALLET_SECRETS.get("created_counter");
@@ -141,6 +143,7 @@ export class EOACreate extends OpenAPIRoute {
 		return EOA.parse({
 			address,
 			pk,
+			expiresAfter,
 			mnemonic: showMnemonic ? mnemonic : undefined,
 		});
 	}
