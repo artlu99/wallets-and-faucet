@@ -1,6 +1,6 @@
 import { entropyToMnemonic } from "@scure/bip39";
 import { wordlist as englishWordlist } from "@scure/bip39/wordlists/english";
-import { Bool, OpenAPIRoute, Str } from "chanfana";
+import { Bool, Num, OpenAPIRoute, Str } from "chanfana";
 import { sha256 } from "hono/utils/crypto";
 import invariant from "tiny-invariant";
 import { bytesToHex, hexToBytes } from "viem";
@@ -59,6 +59,16 @@ export class EOACreate extends OpenAPIRoute {
 							show_mnemonic: Bool({
 								description: "show mnemonic phrase in the response",
 							}).default(false),
+							ttl: Num({
+								description: "time to live in seconds (0 = no-store, ≥60 for expiration). If not provided, uses server default.",
+								example: 7 * 24 * 60 * 60,
+							})
+								.min(0, "TTL must be a non-negative number")
+								.refine(
+									(value) => value === undefined || value === 0 || value >= 60,
+									"TTL must be 0 (no-store) or at least 60 seconds (Cloudflare KV minimum)",
+								)
+								.optional(),
 						}),
 					},
 				},
@@ -83,6 +93,7 @@ export class EOACreate extends OpenAPIRoute {
 		const {
 			mix_entropy_with_public_source: useMixing,
 			show_mnemonic: showMnemonic,
+			ttl: userProvidedTtl,
 		} = data.body;
 		if (userEncryptionSecret) {
 			invariant(
@@ -122,14 +133,35 @@ export class EOACreate extends OpenAPIRoute {
 			"ENCRYPTION_KEY_256_BIT must be a valid 256-bit Base85 string",
 		);
 
-		const expirationTtl = Number(c.env.TTL);
-		const expiresAfter = Date.now() / 1000 + expirationTtl;
 		const key = await getCryptoKey(encryptionKey);
 		const payload = await encrypt(key, new TextEncoder().encode(pk));
 
-		await c.env.WALLET_SECRETS.put(hash, JSON.stringify({ ...payload, expiresAfter }), {
-			expirationTtl,
-		});
+		// Determine TTL behavior:
+		// - undefined (not provided) → use c.env.TTL and store
+		// - 0 (explicitly provided) → no-store
+		// - > 0 (explicitly provided) → use provided value and store (with validation)
+		let expiresAfter: number;
+		if (userProvidedTtl === undefined) {
+			// User didn't provide TTL, use default from env
+			const expirationTtl = Number(c.env.TTL);
+			expiresAfter = Date.now() / 1000 + expirationTtl;
+			await c.env.WALLET_SECRETS.put(hash, JSON.stringify({ ...payload, expiresAfter }), {
+				expirationTtl,
+			});
+		} else if (userProvidedTtl === 0) {
+			// User explicitly provided 0, no-store
+			expiresAfter = 0; // 0 indicates not stored
+		} else {
+			// User provided > 0, validate and use it
+			invariant(
+				userProvidedTtl >= 60,
+				"TTL must be at least 60 seconds (Cloudflare KV minimum)",
+			);
+			expiresAfter = Date.now() / 1000 + userProvidedTtl;
+			await c.env.WALLET_SECRETS.put(hash, JSON.stringify({ ...payload, expiresAfter }), {
+				expirationTtl: userProvidedTtl,
+			});
+		}
 
 		const total_eoa_created = await c.env.WALLET_SECRETS.get("created_counter");
 		await c.env.WALLET_SECRETS.put(
