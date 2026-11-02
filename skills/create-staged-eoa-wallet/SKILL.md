@@ -51,7 +51,7 @@ Generate EVM wallets on-demand. Get an address immediately; retrieve the private
 - `x-encryption-secret`: Custom 256-bit Base85 key (40 chars)
 - `x-salt`: Custom Base85 salt (≤255 chars)
 
-**Response**: `{ address, pk, mnemonic? }`
+**Response**: `{ address, pk, expiresAfter, mnemonic? }`
 
 **Required**: `address`, `pk`
 **Optional**: `mnemonic` (only if `show_mnemonic: true`)
@@ -68,22 +68,22 @@ Generate EVM wallets on-demand. Get an address immediately; retrieve the private
 - `x-salt`: Must match creation (if used)
 - `x-payment`: x402 payment token (required)
 
-**Response**: `{ address, pk, mnemonic? }`
+**Response**: `{ address, pk, expiresAfter, mnemonic? }`
 
 **Status codes**:
 - `200` - Success
 - `402` - Payment required (missing/invalid `x-payment`)
-- `404` - Wallet expired or never created
-- `500` - Decryption failed (wrong encryption key/salt)
+- `404` - Wallet expired, never created, or wrong `x-salt`
+- `403` - Wallet found but decryption failed (`code: "FOUND_BUT_LOCKED"`; wrong `x-encryption-secret`)
 
 ---
 
 ### `GET /ephemeral-secrets` - Generate one-time encryption secrets
 **Operation ID**: `get_EphemeralSecretsRoute`
 
-**Response**: `{ salt, encryption_secret, independent, mixed }`
+**Response**: `{ salt, encryption_secret, independent, mixed, storage_advice }`
 
-Use for enhanced privacy. **Save the values** - you'll need them to retrieve.
+Use for enhanced privacy. **Save `salt` and `encryption_secret` together as a single unit** (e.g. one password-manager entry) - they only work as a pair, and losing either half makes the wallet unrecoverable.
 
 ---
 
@@ -184,17 +184,17 @@ const { address, pk } = await response.json();
 
 | Status | Meaning | Fix |
 |--------|---------|-----|
-| 404 | Wallet not found/expired | Check address, check TTL (7 days) |
+| 404 | Wallet not found/expired | Check address, check salt matches creation, check TTL (7 days) |
 | 402 | Payment required | Process x402 payment, add `x-payment` header |
-| 500 | Decryption failed | Wrong `x-encryption-secret` or `x-salt` |
-| 400 | Bad request | Invalid encryption key format (40-char Base85) or salt (≤255 chars Base85) |
+| 403 | Found but locked (`code: "FOUND_BUT_LOCKED"`) | Wrong `x-encryption-secret` — wallet is still stored; find the correct secret |
+| 400 | Bad request | Invalid encryption key format (40-char Base85) or salt (≥16 chars, ≤255 chars, Base85) |
 
 ---
 
 ## Data Types Reference
 
 **Encryption key**: 40-character Base85 string (256-bit key)
-**Salt**: ≤255 character Base85 string
+**Salt**: Base85 string, ≥16 characters (≤255). Generate with `/ephemeral-secrets` and store together with the encryption secret
 **Address**: 0x-prefixed hex string (40 chars, EIP-55 mixed case)
 **Private key**: 0x-prefixed hex string (64 chars)
 **Mnemonic**: 24-word BIP39 phrase (space-separated)

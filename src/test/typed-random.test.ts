@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EncryptionKeySchema, SaltSchema } from "../lib/types";
+import { EncryptionKeySchema, SaltSchema, UserSaltSchema } from "../lib/types";
 
 describe("salt schema", () => {
 	it("should validate", () => {
@@ -17,6 +17,28 @@ describe("salt schema", () => {
 	it("should not validate (too long)", () => {
 		expect(SaltSchema.safeParse("1234567890".repeat(25)).success).toBe(true);
 		expect(SaltSchema.safeParse("1234567890".repeat(26)).success).toBe(false);
+	});
+});
+
+describe("user salt schema (entropy floor)", () => {
+	it("should allow empty (falls back to server salt)", () => {
+		expect(UserSaltSchema.safeParse("").success).toBe(true);
+	});
+
+	it("should allow salts at or above the floor", () => {
+		expect(UserSaltSchema.safeParse("1234567890123456").success).toBe(true);
+		expect(UserSaltSchema.safeParse("12345678901234567890").success).toBe(true);
+	});
+
+	it("should not allow salts below the floor", () => {
+		expect(UserSaltSchema.safeParse("123456789012345").success).toBe(false);
+		expect(UserSaltSchema.safeParse("password123").success).toBe(false);
+		expect(UserSaltSchema.safeParse("a35c462d111e47f").success).toBe(false);
+	});
+
+	it("should not allow salts beyond the max length", () => {
+		expect(UserSaltSchema.safeParse("1234567890".repeat(25)).success).toBe(true);
+		expect(UserSaltSchema.safeParse("1234567890".repeat(26)).success).toBe(false);
 	});
 });
 describe("encryption key schema", () => {

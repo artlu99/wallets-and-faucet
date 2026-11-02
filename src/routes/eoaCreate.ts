@@ -13,6 +13,7 @@ import {
 	EncryptionKeySchema,
 	EOA,
 	SaltSchema,
+	UserSaltSchema,
 } from "../lib/types";
 
 export class EOACreate extends OpenAPIRoute {
@@ -38,12 +39,13 @@ export class EOACreate extends OpenAPIRoute {
 					(value) => (value === null ? undefined : value),
 					Str({
 						description:
-							"User provided optional override salt (≤255 character Base85 string)",
+							"User provided optional override salt (Base85 string, ≥16 characters, ≤255)",
 						required: false,
-						example: "abcd1234...",
+						example: "wQ7z9BcK2mNf8vXs4LpR",
 					})
-						.refine((value) => SaltSchema.safeParse(value).success, {
-							message: "Salt must be a valid Base85 string",
+						.refine((value) => UserSaltSchema.safeParse(value).success, {
+							message:
+								"Salt must be a valid Base85 string of at least 16 characters (or empty to use the server salt)",
 						})
 						.optional(),
 				),
@@ -103,8 +105,8 @@ export class EOACreate extends OpenAPIRoute {
 		}
 		if (userSalt) {
 			invariant(
-				SaltSchema.safeParse(userSalt).success,
-				"Salt must be a valid Base85 string",
+				UserSaltSchema.safeParse(userSalt).success,
+				"Salt must be a valid Base85 string of at least 16 characters",
 			);
 		}
 

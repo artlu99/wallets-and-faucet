@@ -66,6 +66,23 @@ export const EncryptionKeySchema = z
 
 export type EncryptionKey = z.infer<typeof EncryptionKeySchema>;
 
+/**
+ * Entropy floor for user-provided salts. Short, human-chosen salts are
+ * vulnerable to dictionary enumeration through the paid retrieval endpoint,
+ * where a 403 (found-but-locked) response confirms a correct salt guess.
+ * Empty string remains valid (falls back to the server salt). Generated
+ * salts from /ephemeral-secrets are 20 characters (16 random bytes, Base85)
+ * and always satisfy this floor.
+ */
+export const MIN_USER_SALT_LENGTH = 16;
+
+export const UserSaltSchema = SaltSchema.refine(
+	(value) => value === "" || value.length >= MIN_USER_SALT_LENGTH,
+	{
+		message: `Salt must be at least ${MIN_USER_SALT_LENGTH} characters (generate one at /ephemeral-secrets)`,
+	},
+);
+
 const HexStringSchema = z.string().regex(/^[0-9a-fA-F]+$/);
 
 export const EncryptedPayloadSchema = z.object({

@@ -3,11 +3,13 @@ import { Bool, OpenAPIRoute, Str } from "chanfana";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { randomBytes } from "../lib/random";
-import { EncryptionKeySchema, SaltSchema } from "../lib/types";
+import { EncryptionKeySchema, UserSaltSchema } from "../lib/types";
 
 export class EphemeralSecretsRoute extends OpenAPIRoute {
 	schema = {
 		summary: "Create ephemeral secrets",
+		description:
+			"Generates a salt and encryption secret as a matched pair. Store them together as a single unit (e.g. one password-manager entry) — they are only useful together, and losing either half makes a wallet created with them permanently unrecoverable",
 		responses: {
 			"200": {
 				description: "Generates an ephemeral salt and encryption key",
@@ -15,8 +17,9 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 					"application/json": {
 						schema: z.object({
 							salt: Str({
-								description: "Ephemeral salt",
-								example: "abcd1234...",
+								description:
+									"Ephemeral salt (satisfies the ≥16-character user-salt floor)",
+								example: "wQ7z9BcK2mNf8vXs4LpR",
 							}),
 							encryption_secret: Str({
 								description: "Ephemeral encryption key",
@@ -32,6 +35,10 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 									"Whether the entropy was mixed with a public source",
 								example: false,
 							}),
+							storage_advice: Str({
+								description: "How to store these secrets",
+								example: "Store salt and encryption_secret together as one unit; they only work as a pair",
+							}),
 						}),
 					},
 				},
@@ -43,7 +50,7 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 		const salt = b85encode(randomBytes(16));
 		const encryptionKey = b85encode(randomBytes(256 / 8));
 
-		invariant(SaltSchema.safeParse(salt).success, "Invalid salt generated");
+		invariant(UserSaltSchema.safeParse(salt).success, "Invalid salt generated");
 		invariant(
 			EncryptionKeySchema.safeParse(encryptionKey).success,
 			"Invalid encryption key generated",
@@ -54,6 +61,8 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 			encryption_secret: encryptionKey,
 			independent: true,
 			mixed: false,
+			storage_advice:
+				"Store salt and encryption_secret together as one unit; they only work as a pair",
 		};
 	}
 }

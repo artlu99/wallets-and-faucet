@@ -9,7 +9,7 @@ import {
 	EncryptedPayloadSchema,
 	EncryptionKeySchema,
 	EOA,
-	SaltSchema,
+	UserSaltSchema,
 } from "../lib/types";
 
 export class EOAFetch extends OpenAPIRoute {
@@ -34,11 +34,12 @@ export class EOAFetch extends OpenAPIRoute {
 					(value) => (value === null ? undefined : value),
 					Str({
 						description:
-							"User provided optional override salt (≤255 character Base85 string)",
+							"User provided optional override salt (Base85 string, ≥16 characters, ≤255). Must match the salt used during creation",
 						required: false,
 					})
-						.refine((value) => SaltSchema.safeParse(value).success, {
-							message: "Salt must be a valid Base85 string",
+						.refine((value) => UserSaltSchema.safeParse(value).success, {
+							message:
+								"Salt must be a valid Base85 string of at least 16 characters (or empty to use the server salt)",
 						})
 						.optional(),
 				),
@@ -56,8 +57,21 @@ export class EOAFetch extends OpenAPIRoute {
 					},
 				},
 			},
+			"403": {
+				description:
+					"EOA exists but could not be decrypted with the provided x-encryption-secret. This distinction from 404 is intentional: it tells a legitimate user their wallet is still stored while their credential is wrong. It is only reachable with the correct salt",
+				content: {
+					"application/json": {
+						schema: z.object({
+							error: z.string(),
+							code: z.literal("FOUND_BUT_LOCKED"),
+						}),
+					},
+				},
+			},
 			"404": {
-				description: "EOA not found",
+				description:
+					"EOA not found: wrong address, wrong salt, or the record has expired",
 				content: {
 					"application/json": {
 						schema: z.object({
@@ -86,8 +100,8 @@ export class EOAFetch extends OpenAPIRoute {
 		}
 		if (userSalt) {
 			invariant(
-				SaltSchema.safeParse(userSalt).success,
-				"Salt must be a valid Base85 string",
+				UserSaltSchema.safeParse(userSalt).success,
+				"Salt must be a valid Base85 string of at least 16 characters",
 			);
 		}
 
@@ -139,7 +153,17 @@ export class EOAFetch extends OpenAPIRoute {
 				(Number(total_eoa_failed_to_decrypt ?? 0) + 1).toString(),
 			);
 
-			return c.json({ error: "Failed to decrypt private key" }, 500);
+			// 403 (not 404) is an intentional, documented signal: the record exists
+			// but the provided encryption secret is wrong. It is only reachable with
+			// the correct salt, and user salts have an entropy floor, so this cannot
+			// cheaply confirm dictionary salt guesses.
+			return c.json(
+				{
+					error: "EOA found but the provided encryption secret could not decrypt it",
+					code: "FOUND_BUT_LOCKED",
+				},
+				403,
+			);
 		}
 	}
 }

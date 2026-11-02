@@ -71,7 +71,8 @@ export class StatusRoute extends OpenAPIRoute {
 				Number(c.env.CHARGE_PER_REQUEST),
 			),
 			public_randomness_source: BEACON,
-			user_provided_salt_rules: "≤255 character Base85 string",
+			user_provided_salt_rules:
+				"Base85 string, at least 16 characters (≤255)",
 			user_provided_encryption_key_rules:
 				"40-character Base85 string (256-bit key)",
 		};
