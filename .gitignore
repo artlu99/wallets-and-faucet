@@ -11,6 +11,7 @@ worker-configuration.d.ts
 .env.keys
 
 TODO.md
+CLAUDE.md
+AGENTS.md
 .agents/
 .claude/skills/
-CLAUDE.md
