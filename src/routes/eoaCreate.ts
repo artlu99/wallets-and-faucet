@@ -1,6 +1,6 @@
 import { entropyToMnemonic } from "@scure/bip39";
-import { wordlist as englishWordlist } from "@scure/bip39/wordlists/english";
-import { Bool, Num, OpenAPIRoute, Str } from "chanfana";
+import { wordlist as englishWordlist } from "@scure/bip39/wordlists/english.js";
+import { OpenAPIRoute } from "chanfana";
 import { sha256 } from "hono/utils/crypto";
 import invariant from "tiny-invariant";
 import { bytesToHex, hexToBytes } from "viem";
@@ -23,12 +23,13 @@ export class EOACreate extends OpenAPIRoute {
 			headers: z.object({
 				"x-encryption-secret": z.preprocess(
 					(value) => (value === null ? undefined : value),
-					Str({
-						description:
-							"User provided optional override for symmetric encryption key (256-bit Base85 string)",
-						required: false,
-						example: "xyz789...",
-					})
+					z
+						.string()
+						.meta({
+							description:
+								"User provided optional override for symmetric encryption key (256-bit Base85 string)",
+							example: "xyz789...",
+						})
 						.refine((value) => EncryptionKeySchema.safeParse(value).success, {
 							message:
 								"Encryption secret must be a valid 256-bit Base85 string",
@@ -37,12 +38,13 @@ export class EOACreate extends OpenAPIRoute {
 				),
 				"x-salt": z.preprocess(
 					(value) => (value === null ? undefined : value),
-					Str({
-						description:
-							"User provided optional override salt (Base85 string, ≥16 characters, ≤255)",
-						required: false,
-						example: "wQ7z9BcK2mNf8vXs4LpR",
-					})
+					z
+						.string()
+						.meta({
+							description:
+								"User provided optional override salt (Base85 string, ≥16 characters, ≤255)",
+							example: "wQ7z9BcK2mNf8vXs4LpR",
+						})
 						.refine((value) => UserSaltSchema.safeParse(value).success, {
 							message:
 								"Salt must be a valid Base85 string of at least 16 characters (or empty to use the server salt)",
@@ -54,17 +56,24 @@ export class EOACreate extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							mix_entropy_with_public_source: Bool({
-								description:
-									"mix privately generated key with randomness beacon",
-							}).default(false),
-							show_mnemonic: Bool({
-								description: "show mnemonic phrase in the response",
-							}).default(false),
-							ttl: Num({
-								description: "time to live in seconds (0 = no-store, ≥60 for expiration). If not provided, uses server default.",
-								example: 7 * 24 * 60 * 60,
-							})
+							mix_entropy_with_public_source: z
+								.boolean()
+								.meta({
+									description:
+										"mix privately generated key with randomness beacon",
+								})
+								.default(false),
+							show_mnemonic: z
+								.boolean()
+								.meta({ description: "show mnemonic phrase in the response" })
+								.default(false),
+							ttl: z
+								.number()
+								.meta({
+									description:
+										"time to live in seconds (0 = no-store, ≥60 for expiration). If not provided, uses server default.",
+									example: 7 * 24 * 60 * 60,
+								})
 								.min(0, "TTL must be a non-negative number")
 								.refine(
 									(value) => value === undefined || value === 0 || value >= 60,

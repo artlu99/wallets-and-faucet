@@ -1,5 +1,5 @@
 import { encode as b85encode } from "@alttiri/base85";
-import { Bool, OpenAPIRoute, Str } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { randomBytes } from "../lib/random";
@@ -16,28 +16,29 @@ export class EphemeralSecretsRoute extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							salt: Str({
+							salt: z.string().meta({
 								description:
 									"Ephemeral salt (satisfies the ≥16-character user-salt floor)",
 								example: "wQ7z9BcK2mNf8vXs4LpR",
 							}),
-							encryption_secret: Str({
+							encryption_secret: z.string().meta({
 								description: "Ephemeral encryption key",
 								example: "xyz789...",
 							}),
-							independent: Bool({
+							independent: z.boolean().meta({
 								description:
 									"Whether the salt and encryption key are independent",
 								example: true,
 							}),
-							mixed: Bool({
+							mixed: z.boolean().meta({
 								description:
 									"Whether the entropy was mixed with a public source",
 								example: false,
 							}),
-							storage_advice: Str({
+							storage_advice: z.string().meta({
 								description: "How to store these secrets",
-								example: "Store salt and encryption_secret together as one unit; they only work as a pair",
+								example:
+									"Store salt and encryption_secret together as one unit; they only work as a pair",
 							}),
 						}),
 					},

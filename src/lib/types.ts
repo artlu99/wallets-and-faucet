@@ -1,18 +1,20 @@
 import { decode as b85decode } from "@alttiri/base85";
-import { Num, Str } from "chanfana";
 import type { Context } from "hono";
 import { z } from "zod";
 
 export type AppContext = Context<{ Bindings: Env }>;
 
 export const EOA = z.object({
-	address: Str({ example: "0x..." }),
-	pk: Str({ example: "0x..." }),
-	expiresAfter: Num({
+	address: z.string().meta({ example: "0x..." }),
+	pk: z.string().meta({ example: "0x..." }),
+	expiresAfter: z.number().meta({
 		description: "Unix timestamp after which the EOA can expire",
 		example: 1772323200,
 	}),
-	mnemonic: Str({ example: "word1 word2 word3 ... word24" }).optional(),
+	mnemonic: z
+		.string()
+		.meta({ example: "word1 word2 word3 ... word24" })
+		.optional(),
 });
 
 export const SaltSchema = z
@@ -88,10 +90,13 @@ const HexStringSchema = z.string().regex(/^[0-9a-fA-F]+$/);
 export const EncryptedPayloadSchema = z.object({
 	iv: HexStringSchema,
 	ciphertext: HexStringSchema,
-	expiresAfter: Num({
-		description: "Unix timestamp after which the EOA can expire",
-		example: 1772323200,
-	}).optional(),
+	expiresAfter: z
+		.number()
+		.meta({
+			description: "Unix timestamp after which the EOA can expire",
+			example: 1772323200,
+		})
+		.optional(),
 });
 
 export type EncryptedPayload = z.infer<typeof EncryptedPayloadSchema>;

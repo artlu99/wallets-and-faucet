@@ -1,4 +1,4 @@
-import { Num, OpenAPIRoute, Str } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 
 import { z } from "zod";
 import { humanReadableChargePerRequest, humanReadableTtl } from "../lib/config";
@@ -14,31 +14,31 @@ export class StatusRoute extends OpenAPIRoute {
 				content: {
 					"application/json": {
 						schema: z.object({
-							total_eoa_created: Num({
+							total_eoa_created: z.number().meta({
 								description: "Total number of EOAs created",
 							}),
-							total_eoa_retrieved: Num({
+							total_eoa_retrieved: z.number().meta({
 								description: "Total number of successful requests",
 							}),
-							total_eoa_failed_to_decrypt: Num({
+							total_eoa_failed_to_decrypt: z.number().meta({
 								description: "Total number of failed requests",
 							}),
-							current_eoa_count: Num({
+							current_eoa_count: z.number().meta({
 								description: "Current number of EOAs in the database",
 							}),
-							time_to_deletion: Str({
+							time_to_deletion: z.string().meta({
 								description: "Storage time before deletion (human-readable)",
 							}),
-							x402_price: Str({
+							x402_price: z.string().meta({
 								description: "Price per request (human-readable)",
 							}),
-							public_randomness_source: Str({
+							public_randomness_source: z.string().meta({
 								description: "Public randomness source",
 							}),
-							user_provided_salt_rules: Str({
+							user_provided_salt_rules: z.string().meta({
 								description: "Rules for user provided salt",
 							}),
-							user_provided_encryption_key_rules: Str({
+							user_provided_encryption_key_rules: z.string().meta({
 								description: "Rules for user provided encryption key",
 							}),
 						}),

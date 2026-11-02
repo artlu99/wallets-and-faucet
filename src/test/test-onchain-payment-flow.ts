@@ -8,12 +8,12 @@ import { privateKeyToAccount } from "viem/accounts";
 const BASE_URL = "https://wallets-and-faucet.uk"; // "http://localhost:8787"
 const publicAddress = "0x...";
 const encryptionSecret = "xyz789...";
-const salt = "abcd1234...";
+const salt = "wQ7z9BcK2mNf8vXs4LpR";
 
 dotenv.config();
 
 // N.B. this address should have at least $0.10 of Base USDC
-const PK = dotenv.get("EVM_PRIVATE_KEY");
+const PK = await dotenv.get("EVM_PRIVATE_KEY");
 if (!PK) throw new Error("EVM_PRIVATE_KEY is required (e.g. in .env)");
 
 // reference: https://docs.x402.org/getting-started/quickstart-for-buyers

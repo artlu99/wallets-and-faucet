@@ -1,4 +1,3 @@
-import { formatDistance } from "date-fns";
 import invariant from "tiny-invariant";
 import { EncryptionKeySchema, SaltSchema } from "./types";
 
@@ -40,11 +39,12 @@ export function validatePaymentWorkerConfig(env: Env): void {
 }
 
 export function humanReadableTtl(ttlInSeconds: number): string {
-	return formatDistance(
-		Date.now() + Number(ttlInSeconds) * 1000, // 1 day in milliseconds
-		new Date(),
-		{ addSuffix: true },
-	);
+	const relative = new Intl.RelativeTimeFormat("en", { numeric: "always" });
+	const days = ttlInSeconds / 86400;
+	if (Math.abs(days) >= 1) return relative.format(Math.round(days), "day");
+	const hours = ttlInSeconds / 3600;
+	if (Math.abs(hours) >= 1) return relative.format(Math.round(hours), "hour");
+	return relative.format(Math.round(ttlInSeconds / 60), "minute");
 }
 
 export function humanReadableChargePerRequest(

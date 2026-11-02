@@ -1,4 +1,4 @@
-import { OpenAPIRoute, Str } from "chanfana";
+import { OpenAPIRoute } from "chanfana";
 import { sha256 } from "hono/utils/crypto";
 import invariant from "tiny-invariant";
 import { z } from "zod";
@@ -19,11 +19,12 @@ export class EOAFetch extends OpenAPIRoute {
 			headers: z.object({
 				"x-encryption-secret": z.preprocess(
 					(value) => (value === null ? undefined : value),
-					Str({
-						description:
-							"User provided optional override for symmetric encryption key (256-bit Base85 string)",
-						required: false,
-					})
+					z
+						.string()
+						.meta({
+							description:
+								"User provided optional override for symmetric encryption key (256-bit Base85 string)",
+						})
 						.refine((value) => EncryptionKeySchema.safeParse(value).success, {
 							message:
 								"Encryption secret must be a valid 256-bit Base85 string",
@@ -32,11 +33,12 @@ export class EOAFetch extends OpenAPIRoute {
 				),
 				"x-salt": z.preprocess(
 					(value) => (value === null ? undefined : value),
-					Str({
-						description:
-							"User provided optional override salt (Base85 string, ≥16 characters, ≤255). Must match the salt used during creation",
-						required: false,
-					})
+					z
+						.string()
+						.meta({
+							description:
+								"User provided optional override salt (Base85 string, ≥16 characters, ≤255). Must match the salt used during creation",
+						})
 						.refine((value) => UserSaltSchema.safeParse(value).success, {
 							message:
 								"Salt must be a valid Base85 string of at least 16 characters (or empty to use the server salt)",
@@ -45,7 +47,7 @@ export class EOAFetch extends OpenAPIRoute {
 				),
 			}),
 			params: z.object({
-				address: Str({ description: "public address" }),
+				address: z.string().meta({ description: "public address" }),
 			}),
 		},
 		responses: {
