@@ -65,6 +65,16 @@ Legend: ✅ protected. ⚠️ partial. ❌ exposed. — no user credential exist
 - Best hosted configuration: a fresh salt and secret pair from `/ephemeral-secrets`, stored as one unit.
 - Best overall: `ttl: 0` with the key saved from the create response, or self-run.
 
+### Beacon trust
+
+The optional entropy mix uses the latest [League of Entropy](https://drand.cloudflare.com) (drand quicknet) signature. The server uses the signature **without verification** at request time. The trust model is optimistic:
+
+- A forged signature cannot reveal keys. The signature is one input to a hash whose other input the server does not disclose.
+- Beacon output is public and widely consumed. Systemic beacon compromise is visible to everyone using the same feed.
+- Verification of round signatures can be added later without changing the wallet format. The mix is a plain `SHA-256(local entropy ‖ signature)`.
+
+The mix protects against one failure class: secret entropy collapse at the server. Keys derived from a small unknown state stay unreadable while the beacon signature stays unknown to the attacker. The mix does not protect against an attacker who can read the create request. Wallets created with mixing have the same storage, payment, and operator properties as all other wallets. The mix changes key birth only.
+
 ---
 
 ## Error semantics
@@ -111,7 +121,7 @@ x-salt: <Base85 string, 16 to 255 chars>
 }
 ```
 
-- `mix_entropy_with_public_source` (default `false`): mix the private key with the beacon signature. The mix is a SHA-256 of your key and the signature.
+- `mix_entropy_with_public_source` (default `false`): mix the private key with the beacon signature. The mix is a SHA-256 of your key and the signature. The server uses the signature without verification at request time. See [Beacon trust](#beacon-trust).
 - `show_mnemonic` (default `false`): add a 24-word BIP39 mnemonic to the response.
 - `ttl`: seconds. `0` = do not store. `60` or more = store for this duration. No value = server default.
 

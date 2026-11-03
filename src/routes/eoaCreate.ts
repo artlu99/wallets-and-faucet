@@ -60,7 +60,7 @@ export class EOACreate extends OpenAPIRoute {
 								.boolean()
 								.meta({
 									description:
-										"mix privately generated key with randomness beacon",
+										"mix privately generated key with randomness beacon signature (used without verification at request time)",
 								})
 								.default(false),
 							show_mnemonic: z
