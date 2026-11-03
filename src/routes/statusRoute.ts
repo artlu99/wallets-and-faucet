@@ -49,23 +49,31 @@ export class StatusRoute extends OpenAPIRoute {
 	};
 
 	async handle(c: AppContext) {
-		const total_eoa_created = await c.env.WALLET_SECRETS.get("created_counter");
-		const total_eoa_retrieved =
-			await c.env.WALLET_SECRETS.get("retrieved_counter");
-		const total_eoa_failed_to_decrypt = await c.env.WALLET_SECRETS.get(
+		const COUNTER_KEYS = new Set([
+			"created_counter",
+			"retrieved_counter",
 			"failed_to_decrypt_counter",
+		]);
+		const total_eoa_created = Number(
+			(await c.env.WALLET_SECRETS.get("created_counter")) ?? 0,
+		);
+		const total_eoa_retrieved = Number(
+			(await c.env.WALLET_SECRETS.get("retrieved_counter")) ?? 0,
+		);
+		const total_eoa_failed_to_decrypt = Number(
+			(await c.env.WALLET_SECRETS.get("failed_to_decrypt_counter")) ?? 0,
 		);
 		const listKeysUpTo1000 = await c.env.WALLET_SECRETS.list();
+		const walletRecordCount =
+			listKeysUpTo1000.keys?.filter((key) => !COUNTER_KEYS.has(key.name))
+				.length ?? 0;
 		const timeToDeletion = Number(c.env.TTL);
 
 		return {
-			total_eoa_created: Math.max(
-				Number(total_eoa_created || 0),
-				listKeysUpTo1000.keys?.length || 0,
-			),
-			total_eoa_retrieved: total_eoa_retrieved || 0,
-			total_eoa_failed_to_decrypt: total_eoa_failed_to_decrypt || 0,
-			current_eoa_count: Math.max(listKeysUpTo1000.keys?.length || 0 - 3, 0),
+			total_eoa_created: Math.max(total_eoa_created, walletRecordCount),
+			total_eoa_retrieved,
+			total_eoa_failed_to_decrypt,
+			current_eoa_count: walletRecordCount,
 			time_to_deletion: humanReadableTtl(timeToDeletion),
 			x402_price: humanReadableChargePerRequest(
 				Number(c.env.CHARGE_PER_REQUEST),
